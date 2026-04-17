@@ -1,23 +1,58 @@
-import { useState } from "react";
-import { startSpeechToText } from "./assets/utilits/speechtotext";
+import { useState, useRef } from "react";
 
 const SpeechText = () => {
   const [text, setText] = useState("");
+  const [isListening, setIsListening] = useState(false);
+  const recognitionRef = useRef(null);
 
   // ✅ Feature detection
-  const isSpeechSupported =
-    "SpeechRecognition" in window ||
-    "webkitSpeechRecognition" in window;
+  const SpeechRecognition =
+    window.SpeechRecognition || window.webkitSpeechRecognition;
 
-  // ✅ Optional device detection
-  const isIpad =
-    /iPad|Macintosh/.test(navigator.userAgent) &&
-    "ontouchend" in document;
+  const isSpeechSupported = !!SpeechRecognition;
 
   const handleMic = () => {
-    startSpeechToText((spokenText) => {
-      setText((prev) => prev + " " + spokenText);
-    });
+    if (!isSpeechSupported) {
+      alert("Speech Recognition not supported in this browser");
+      return;
+    }
+
+    // Prevent multiple instances
+    if (isListening) {
+      recognitionRef.current.stop();
+      setIsListening(false);
+      return;
+    }
+
+    const recognition = new SpeechRecognition();
+
+    recognition.lang = "en-US"; // change to "es-ES" for Spanish
+    recognition.continuous = false; // stops after one sentence
+    recognition.interimResults = false;
+
+    recognition.onstart = () => {
+      setIsListening(true);
+    };
+
+    recognition.onresult = (event) => {
+      const spokenText = event.results[0][0].transcript;
+
+      setText((prev) =>
+        prev ? prev + " " + spokenText : spokenText
+      );
+    };
+
+    recognition.onerror = (event) => {
+      console.error("Speech recognition error:", event.error);
+      setIsListening(false);
+    };
+
+    recognition.onend = () => {
+      setIsListening(false);
+    };
+
+    recognition.start();
+    recognitionRef.current = recognition;
   };
 
   return (
@@ -33,18 +68,12 @@ const SpeechText = () => {
 
       <br />
 
-      {/* ✅ Desktop mic */}
-      {isSpeechSupported && (
-        <button onClick={handleMic}>🎤 Speak</button>
-      )}
-
-      {/* ✅ iPad fallback */}
-      {!isSpeechSupported && (
-        <p style={{ marginTop: 10 }}>
-          🎤 Use your keyboard microphone to speak
-          <br />
-          🌐 Switch keyboard for Spanish input
-        </p>
+      {isSpeechSupported ? (
+        <button onClick={handleMic}>
+          {isListening ? "🛑 Stop" : "🎤 Speak"}
+        </button>
+      ) : (
+        <p>Speech Recognition is not supported in this browser</p>
       )}
     </div>
   );
