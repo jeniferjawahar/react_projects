@@ -1,84 +1,40 @@
 import { useState, useEffect } from "react";
 import { compliments } from "./data/compliments";
+import { useCompliments } from "./hooks/useCompliments";
+import "./App.css";
 
 function App() {
-  const [category, setCategory] = useState("general");
-  const [compliment, setCompliment] = useState("");
-  const [used, setUsed] = useState([]);
 
-  // Load saved compliment
-  useEffect(() => {
-    const saved = localStorage.getItem("compliment");
-    if (saved) setCompliment(saved);
-  }, []);
+  const {category,setCategory,compliment,generateCompliment,used}=useCompliments();
 
-  // Save compliment
-  useEffect(() => {
-    localStorage.setItem("compliment", compliment);
-  }, [compliment]);
 
-  // Reset used when category changes
-  useEffect(() => {
-    setUsed([]);
-  }, [category]);
-
-  const generateCompliment = () => {
-    const list = compliments[category];
-
-    // Filter unused compliments
-    const unused = list.filter(item => !used.includes(item));
-
-    // Reset if all used
-    if (unused.length === 0) {
-      setUsed([]);
-      return;
-    }
-
-    // Pick random
-    const random =
-      unused[Math.floor(Math.random() * unused.length)];
-
-    setCompliment(random);
-    setUsed(prev => [...prev, random]);
-  };
-
-  const copyToClipboard = () => {
-    if (!compliment) return;
+  const copyCompliment=()=>{
+    if(!compliment)return;
     navigator.clipboard.writeText(compliment);
-  };
+  }
 
   return (
-    <div style={{ textAlign: "center", marginTop: "100px" }}>
-      <h1>💬 Random Compliment Generator</h1>
+    <div className="container">
+      <h1>Random Compliment Generator</h1>
 
-      {/* Category */}
-      <select
-        value={category}
-        onChange={(e) => setCategory(e.target.value)}
-      >
+      <select value={category} onChange={(e)=>setCategory(e.target.value)}>
         <option value="general">General</option>
         <option value="work">Work</option>
         <option value="personality">Personality</option>
       </select>
 
-      <br /><br />
+      <button onClick={generateCompliment}>GenerateCompliment</button>
 
-      {/* Generate */}
-      <button onClick={generateCompliment}>
-        Generate Compliment
-      </button>
+      <h2>{compliment || "click to generate compliment"}</h2>
 
-      {/* Output */}
-      <h2 style={{ marginTop: "20px" }}>
-        {compliment || "Click to get a compliment"}
-      </h2>
-
-      {/* Copy */}
-      <button onClick={copyToClipboard}>
-        Copy
-      </button>
+      <button disabled={!compliment} onClick={copyCompliment}>Copy to clipboard</button>
     </div>
-  );
-}
+  )
+
+
+  }
+ 
+    
+
 
 export default App;
